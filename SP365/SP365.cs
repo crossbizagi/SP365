@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.SharePoint.Client;
 using System.Security;
+using System.IO;
 
 namespace BizagiCL
 {
@@ -62,6 +63,23 @@ namespace BizagiCL
 
                 clientContext.Credentials = new SharePointOnlineCredentials(userName, passWord);
 
+                if (folder == null)
+                {
+                    folder = "";
+                }
+                MemoryStream ms = new MemoryStream();
+                ms.Write(data, 0, data.Length);
+                ms.Flush();
+                string fileNameref = fileName;
+                if (fileNameref.IndexOf("\\") > 0)
+                {
+                    fileNameref = fileNameref.Substring(fileNameref.LastIndexOf("\\") + 1);
+                }
+                string relativeUrlPath = "/" + Path.Combine(parentFolder, folder, fileNameref).Replace("\\", "/");
+                Microsoft.SharePoint.Client.File.SaveBinaryDirect(clientContext, relativeUrlPath, ms, true);
+                ms.Close();
+
+                /*
                 Web web = clientContext.Web;
 
                 clientContext.Load(web);
@@ -85,6 +103,7 @@ namespace BizagiCL
                 Microsoft.SharePoint.Client.File uploadFile = spFolder.Files.Add(newFile);
                 clientContext.Load(uploadFile);
                 clientContext.ExecuteQuery();
+                 */
             }
         }
 
@@ -114,7 +133,7 @@ namespace BizagiCL
                 clientContext.Load(files);
                 clientContext.ExecuteQuery();
 
-                foreach (File file in files)
+                foreach (Microsoft.SharePoint.Client.File file in files)
                 {
                     if (file.Name == fileNameref)
                     {

@@ -46,7 +46,7 @@ namespace Sharepoint365
                     password = defaultPassword;
                 }
 
-                Console.Write("File to upload (c:\\temp\\I did it.jpg");
+                Console.Write("File to upload (c:\\temp\\I did it.jpg: ");
                 string file = Console.ReadLine();
                 if (string.IsNullOrEmpty(file))
                 {
@@ -62,7 +62,7 @@ namespace Sharepoint365
                 Buffer.BlockCopy(content, 0, scontent, 0, content.Length);
 
                 Console.WriteLine("Uploading file....");
-                BizagiCL.SP365.PublishFile(website, scontent, file, user, password, "Documents", folder);
+                BizagiCL.SP365.PublishFile(website, scontent, file, user, password, "Compliance_Case_Documents", "Shared Documents");
                 Console.WriteLine("File uploaded");
 
             }
@@ -142,7 +142,7 @@ namespace Sharepoint365
         static void Main(string[] args)
         {
 //            TestFolder();
-            //testNewFile();
+            testNewFile();
 
             string user = ReadValue("User", defaultUser);
             string password = ReadValue("Password", defaultPassword);
