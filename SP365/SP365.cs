@@ -63,6 +63,12 @@ namespace BizagiCL
 
                 clientContext.Credentials = new SharePointOnlineCredentials(userName, passWord);
 
+                Web web = clientContext.Web;
+
+                clientContext.Load(web);
+
+                Folder spFolder = GetFolder(clientContext, parentFolder, folder);
+
                 if (folder == null)
                 {
                     folder = "";
@@ -75,35 +81,10 @@ namespace BizagiCL
                 {
                     fileNameref = fileNameref.Substring(fileNameref.LastIndexOf("\\") + 1);
                 }
-                string relativeUrlPath = "/" + Path.Combine(parentFolder, folder, fileNameref).Replace("\\", "/");
+                string relativeUrlPath = spFolder.ServerRelativeUrl + "/" + fileNameref;
+
                 Microsoft.SharePoint.Client.File.SaveBinaryDirect(clientContext, relativeUrlPath, ms, true);
                 ms.Close();
-
-                /*
-                Web web = clientContext.Web;
-
-                clientContext.Load(web);
-
-                FileCreationInformation newFile = new FileCreationInformation();
-                newFile.Content = data;
-                string fileNameref = fileName;
-                if (fileNameref.IndexOf("\\") > 0)
-                {
-                    fileNameref = fileNameref.Substring(fileNameref.LastIndexOf("\\") + 1);
-                }
-                //if (folder.IndexOf("/") > -1)
-                //{
-                //    fileNameref = folder.Substring(folder.IndexOf("/") + 1) + "/" + fileNameref;
-                //    folder = folder.Substring(0, folder.LastIndexOf("/"));
-                //}
-                newFile.Url = fileNameref;
-
-                Folder spFolder = GetFolder(clientContext, parentFolder, folder);
-                //List docs = web.Lists.GetByTitle(folder);
-                Microsoft.SharePoint.Client.File uploadFile = spFolder.Files.Add(newFile);
-                clientContext.Load(uploadFile);
-                clientContext.ExecuteQuery();
-                 */
             }
         }
 
