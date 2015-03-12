@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.SharePoint.Client;
 using System.Security;
 using System.IO;
+using SP365;
 
 namespace BizagiCL
 {
@@ -12,79 +13,105 @@ namespace BizagiCL
     {
         private static Folder GetFolder(ClientContext clientContext, string parentFolder, string subFolder)
         {
-            Web web = clientContext.Web;
-
-            clientContext.Load(web);
-
-            // Loads the folder
-            List docs = web.Lists.GetByTitle(parentFolder);
-            Folder spFolder;
-            if (!string.IsNullOrEmpty(subFolder))
+            try
             {
-                clientContext.Load(docs.RootFolder);
-                clientContext.ExecuteQuery();
-                string url = docs.RootFolder.Name;
-                url += "/" + subFolder;
-
-                try
-                {
-                    spFolder = web.GetFolderByServerRelativeUrl(url);
-                    clientContext.Load(spFolder);
-                    clientContext.ExecuteQuery();
-                }
-                catch
-                {
-                    internalCreateFolder(clientContext, parentFolder, subFolder);
-                    spFolder = web.GetFolderByServerRelativeUrl(url);
-                    clientContext.Load(spFolder);
-                    clientContext.ExecuteQuery();
-                }
-
-            }
-            else
-            {
-                spFolder = docs.RootFolder;
-                clientContext.Load(spFolder);
-            }
-
-            return spFolder;
-        }
-
-        public static void PublishFile(string website, sbyte[] sdata, string fileName, string userName, string password, string parentFolder, string folder)
-        {
-            byte[] data = new byte[sdata.Length];
-            Buffer.BlockCopy(sdata, 0, data, 0, sdata.Length);
-
-            using (ClientContext clientContext = new ClientContext(website))
-            {
-                SecureString passWord = new SecureString();
-
-                foreach (char c in password.ToCharArray()) passWord.AppendChar(c);
-
-                clientContext.Credentials = new SharePointOnlineCredentials(userName, passWord);
-
+                if (Logger.Instance.IsDebug) Logger.Instance.Debug(string.Format("GetFolder: {0}/{1}", parentFolder, subFolder));
                 Web web = clientContext.Web;
 
                 clientContext.Load(web);
 
-                Folder spFolder = GetFolder(clientContext, parentFolder, folder);
-
-                if (folder == null)
+                // Loads the folder
+                List docs = web.Lists.GetByTitle(parentFolder);
+                Folder spFolder;
+                if (!string.IsNullOrEmpty(subFolder))
                 {
-                    folder = "";
-                }
-                MemoryStream ms = new MemoryStream();
-                ms.Write(data, 0, data.Length);
-                ms.Flush();
-                string fileNameref = fileName;
-                if (fileNameref.IndexOf("\\") > 0)
-                {
-                    fileNameref = fileNameref.Substring(fileNameref.LastIndexOf("\\") + 1);
-                }
-                string relativeUrlPath = spFolder.ServerRelativeUrl + "/" + fileNameref;
+                    clientContext.Load(docs.RootFolder);
+                    clientContext.ExecuteQuery();
+                    string url = docs.RootFolder.Name;
+                    url += "/" + subFolder;
 
-                Microsoft.SharePoint.Client.File.SaveBinaryDirect(clientContext, relativeUrlPath, ms, true);
-                ms.Close();
+                    try
+                    {
+                        spFolder = web.GetFolderByServerRelativeUrl(url);
+                        clientContext.Load(spFolder);
+                        clientContext.ExecuteQuery();
+                    }
+                    catch
+                    {
+                        if (Logger.Instance.IsInfo) Logger.Instance.Info(string.Format("Failed to load the subfolder. Creating folder {0}/{1}", parentFolder, subFolder));
+                        internalCreateFolder(clientContext, parentFolder, subFolder);
+                        spFolder = web.GetFolderByServerRelativeUrl(url);
+                        clientContext.Load(spFolder);
+                        clientContext.ExecuteQuery();
+                    }
+
+                }
+                else
+                {
+                    spFolder = docs.RootFolder;
+                    clientContext.Load(spFolder);
+                }
+
+                return spFolder;
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Error(string.Format("Error in GetFolder: {0}\r\nStackTrace: {1}", e.Message, e.StackTrace.ToString()));
+                throw e;
+            }
+        }
+
+        public static void PublishFile(string website, sbyte[] sdata, string fileName, string userName, string password, string parentFolder, string folder)
+        {
+            if (Logger.Instance.IsDebug) Logger.Instance.Debug(string.Format("PublishFile: {0}/{1}/{2}/{3}", website, fileName, parentFolder, folder));
+
+            try
+            {
+                byte[] data = new byte[sdata.Length];
+                Buffer.BlockCopy(sdata, 0, data, 0, sdata.Length);
+
+                using (ClientContext clientContext = new ClientContext(website))
+                {
+                    SecureString passWord = new SecureString();
+
+                    foreach (char c in password.ToCharArray()) passWord.AppendChar(c);
+
+                    clientContext.Credentials = new SharePointOnlineCredentials(userName, passWord);
+
+                    Web web = clientContext.Web;
+
+                    clientContext.Load(web);
+
+                    Folder spFolder = GetFolder(clientContext, parentFolder, folder);
+
+                    if (folder == null)
+                    {
+                        folder = "";
+                    }
+                    MemoryStream ms = new MemoryStream();
+                    ms.Write(data, 0, data.Length);
+                    //                ms.Flush();
+                    string fileNameref = fileName;
+                    if (fileNameref.IndexOf("\\") > 0)
+                    {
+                        fileNameref = fileNameref.Substring(fileNameref.LastIndexOf("\\") + 1);
+                    }
+                    string relativeUrlPath = spFolder.ServerRelativeUrl + "/" + fileNameref;
+
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    if (Logger.Instance.IsInfo) Logger.Instance.Info(string.Format("Uploading file {0} to: {1}", fileName, relativeUrlPath));
+
+                    Microsoft.SharePoint.Client.File.SaveBinaryDirect(clientContext, relativeUrlPath, ms, true);
+                    ms.Close();
+                    if (Logger.Instance.IsInfo) Logger.Instance.Info(string.Format("Sucessfully uploaded file {0} to: {1}", fileName, relativeUrlPath));
+
+                }
+            } 
+            catch (Exception e)
+            {
+                Logger.Instance.Error(string.Format("Error in PublishFile: {0}\r\nStackTrace: {1}", e.Message, e.StackTrace.ToString()));
+                throw e;
             }
         }
 
