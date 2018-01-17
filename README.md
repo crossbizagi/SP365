@@ -25,6 +25,7 @@ Usage
 Using the dll is quite simple, here are the 3 supported methods:
 
 Upload a file from bizagi data model to SP365:
+```javascript
     var website = "http://mysharepoint/repository";
     var scontent = <customer.picture[1].data>;
     var file = <customer.picture[1].fileName>;
@@ -33,8 +34,10 @@ Upload a file from bizagi data model to SP365:
     var parentFolder = "Documents";
     var folder = "innerfolder";
     BizagiCL.SP365.PublishFile(website, scontent, file, user, password, parentFolder, folder);
+```
 
 Delete a file:
+```javascript
     var website = "http://mysharepoint/repository";
     var file = <customer.picture[1].fileName>;
     var user = "my_sp_user";
@@ -42,8 +45,10 @@ Delete a file:
     var parentFolder = "Documents";
     var folder = "innerfolder";
     BizagiCL.SP365.DeleteFile(website, file, user, password, parentFolder, folder);
+```
 
 Create a folder:
+```javascript
     var website = "http://mysharepoint/repository";
     var file = <customer.picture[1].fileName>;
     var user = "my_sp_user";
@@ -51,6 +56,7 @@ Create a folder:
     var parentFolder = "Documents";
     var folder = "innerfolder";
     BizagiCL.SP365.CreateFolder(website, user, password, parentFolder, folder);
+```
 
 
 Support
